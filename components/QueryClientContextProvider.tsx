@@ -5,15 +5,7 @@ import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-quer
 import { toast } from "@/hooks/use-toast";
 import { SupabaseClient } from "@supabase/supabase-js";
 
-const queryClient = new QueryClient(
-    {
-        defaultOptions: {
-            queries: {
-                gcTime: 1000 * 60 * 60 * 24
-            }
-        }
-    }
-);
+const queryClient = new QueryClient();
 
 export function useFiles(supabase: SupabaseClient) {
     return useQuery({
