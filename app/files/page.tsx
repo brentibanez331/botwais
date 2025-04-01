@@ -13,7 +13,6 @@ export default function FilesPage() {
   const { status, data: documents, error, isFetching } = useFiles(supabase)
 
   return (
-
     <div className="max-w-6xl m-4 sm:m-10 flex flex-col gap-8 grow items-stretch">
       <div className="h-40 flex flex-col justify-center items-center border-b pb-8">
         <Input
@@ -71,7 +70,7 @@ export default function FilesPage() {
                   return;
                 }
 
-                window.location.href = data.signedUrl;
+                globalThis.location.href = data.signedUrl;
               }}
             >
               <svg

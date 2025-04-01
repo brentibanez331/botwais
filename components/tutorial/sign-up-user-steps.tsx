@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { TutorialStep } from "./tutorial-step";
 import { ArrowUpRight } from "lucide-react";
+import process from "node:process";
 
 export default function SignUpUserSteps() {
   return (
     <ol className="flex flex-col gap-6">
       {process.env.VERCEL_ENV === "preview" ||
-      process.env.VERCEL_ENV === "production" ? (
+        process.env.VERCEL_ENV === "production" ? (
         <TutorialStep title="Set up redirect urls">
           <p>It looks like this App is hosted on Vercel.</p>
           <p className="mt-4">
@@ -24,9 +25,9 @@ export default function SignUpUserSteps() {
             You will need to{" "}
             <Link
               className="text-primary hover:text-foreground"
-              href={
-                "https://supabase.com/dashboard/project/_/auth/url-configuration"
-              }
+              href=
+              "https://supabase.com/dashboard/project/_/auth/url-configuration"
+
             >
               update your Supabase project
             </Link>{" "}
