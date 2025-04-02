@@ -1,0 +1,1 @@
+create table candidates from 

@@ -1,3 +1,4 @@
+
 import { createClient } from "@supabase/supabase-js";
 import { processMarkdown } from "../_lib/markdown-parser.ts";
 
@@ -74,7 +75,10 @@ Deno.serve(async (req) => {
 
   const fileContents = await file.text();
 
-
+  // processMarkdown(
+  //   content: string,
+  //   maxSectionLength = 2500
+  // )
   const processedMd = processMarkdown(fileContents);
 
   const { error } = await supabase.from("document_sections").insert(

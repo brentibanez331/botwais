@@ -5,12 +5,6 @@ import {
   Tensor,
 } from "@xenova/transformers";
 import { useEffect, useState } from "react";
-// import {
-//   InitEventData,
-//   OutgoingEventData,
-//   RunEventData,
-// } from './workers/pipeline';
-
 import {
   InitEventData,
   OutgoingEventData,

@@ -6,22 +6,32 @@ import { usePipeline } from '@/lib/hooks/use-pipeline';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/utils/supabase/client';
 import { useChat } from '@ai-sdk/react';
-import process from 'node:process'
+import OpenAI from 'openai';
+import { useEffect, useState } from 'react';
+
 
 export default function ChatPage() {
     const supabase = createClient();
+    const [isLoading, setIsLoading] = useState(false);
 
-    const generateEmbedding = usePipeline(
-        'feature-extraction',
-        'Supabase/gte-small'
-    );
-
-    const { messages, input, handleInputChange, handleSubmit, isLoading } =
+    const { messages, input, handleInputChange, handleSubmit } =
         useChat({
             api: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/chat`,
+            onError: (error) => {
+                console.error("Chat API error:", error);
+                setIsLoading(false);
+            },
+            onResponse: (response) => {
+                console.log("Response received:", response.status);
+                if (!response.ok) {
+                    response.text().then(text => console.error("Response body:", text));
+                }
+            }
         });
 
-    const isReady = !!generateEmbedding;
+    useEffect(() => {
+        console.log("Current messages:", messages);
+    }, [messages]);
 
     return (
         <div className="flex flex-col items-center w-full h-full">
@@ -63,34 +73,46 @@ export default function ChatPage() {
                     className="flex items-center space-x-2 gap-2"
                     onSubmit={async (e) => {
                         e.preventDefault();
-                        if (!generateEmbedding) {
-                            throw new Error('Unable to generate embeddings');
+                        setIsLoading(true)
+
+                        try {
+                            const embeddingResponse = await fetch('/api/generate-embedding', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ text: input })
+                            })
+
+                            if (!embeddingResponse.ok) {
+                                throw new Error('Failed to generate embedding');
+                            }
+
+                            const { embedding } = await embeddingResponse.json();
+
+                            const {
+                                data: { session },
+                            } = await supabase.auth.getSession();
+
+                            if (!session) {
+                                return;
+                            }
+
+                            handleSubmit(e, {
+                                headers: {
+                                    authorization: `Bearer ${session.access_token}`,
+                                },
+                                body: {
+                                    embedding,
+                                },
+
+                            });
+
+                        } catch (error) {
+                            console.error('Error during chat submission:', error);
+                        } finally {
+                            setIsLoading(false);
                         }
-
-                        const output = await generateEmbedding(input, {
-                            pooling: 'mean',
-                            normalize: true,
-                        });
-
-                        const embedding = JSON.stringify(Array.from(output.data));
-
-                        const {
-                            data: { session },
-                        } = await supabase.auth.getSession();
-
-                        if (!session) {
-                            return;
-                        }
-
-                        handleSubmit(e, {
-                            headers: {
-                                authorization: `Bearer ${session.access_token}`,
-                            },
-                            body: {
-                                embedding,
-                            },
-
-                        });
                     }}
                 >
                     <Input
@@ -100,7 +122,7 @@ export default function ChatPage() {
                         value={input}
                         onChange={handleInputChange}
                     />
-                    <Button type="submit" disabled={!isReady}>
+                    <Button type="submit" disabled={!!isLoading}>
                         Send
                     </Button>
                 </form>

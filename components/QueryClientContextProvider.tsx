@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { Document } from "@/utils/types";
 
 const queryClient = new QueryClient();
 
@@ -21,7 +22,7 @@ export function useFiles(supabase: SupabaseClient) {
           throw error;
         }
   
-        return data;
+        return data as Document[];
       }
     })
   }

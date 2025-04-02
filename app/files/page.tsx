@@ -1,19 +1,23 @@
 'use client';
 
 import { useFiles } from '@/components/QueryClientContextProvider';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function FilesPage() {
   const supabase = createClient();
   const router = useRouter();
+  const [selectedDocument, setSelectedDocument] = useState<number>()
+  const [isGenerating, setIsGenerating] = useState(false)
 
   const { status, data: documents, error, isFetching } = useFiles(supabase)
 
   return (
-    <div className="max-w-6xl m-4 sm:m-10 flex flex-col gap-8 grow items-stretch">
+    <div className=" m-4 sm:m-10 flex flex-col gap-8 grow items-stretch">
       <div className="h-40 flex flex-col justify-center items-center border-b pb-8">
         <Input
           type="file"
@@ -39,41 +43,45 @@ export default function FilesPage() {
                 return;
               }
 
-              router.push('/chat');
+              // router.push('/chat');
             }
           }}
         />
       </div>
+
       {documents && (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
           {documents.map((document) => (
             <div
-              className="flex flex-col gap-2 justify-center items-center border rounded-md p-4 sm:p-6 text-center overflow-hidden cursor-pointer hover:bg-slate-100"
-              onClick={async () => {
-                if (!document.storage_object_path) {
-                  toast({
-                    variant: 'destructive',
-                    description: 'Failed to download file, please try again.',
-                  });
-                  return;
-                }
+              key={document.id}
+              className={`flex flex-col gap-2 justify-center items-center border rounded-md p-4 sm:p-6 text-center overflow-hidden cursor-pointer hover:bg-slate-800 text-white ${selectedDocument === document.id ? '!border-white' : ''}`}
+              onClick={() => {
+                setSelectedDocument(document.id)
+                // if (!document.storage_object_path) {
+                //   toast({
+                //     variant: 'destructive',
+                //     description: 'Failed to download file, please try again.',
+                //   });
+                //   return;
+                // }
 
-                const { data, error } = await supabase.storage
-                  .from('files')
-                  .createSignedUrl(document.storage_object_path, 60);
+                // const { data, error } = await supabase.storage
+                //   .from('files')
+                //   .createSignedUrl(document.storage_object_path, 60);
 
-                if (error) {
-                  toast({
-                    variant: 'destructive',
-                    description: 'Failed to download file. Please try again.',
-                  });
-                  return;
-                }
+                // if (error) {
+                //   toast({
+                //     variant: 'destructive',
+                //     description: 'Failed to download file. Please try again.',
+                //   });
+                //   return;
+                // }
 
-                globalThis.location.href = data.signedUrl;
+                // globalThis.location.href = data.signedUrl;
               }}
             >
               <svg
+                className='bg-white '
                 width="50px"
                 height="50px"
                 version="1.1"
@@ -88,6 +96,39 @@ export default function FilesPage() {
           ))}
         </div>
       )}
+      <Button className='w-[300px]' onClick={async () => {
+        if (!selectedDocument) {
+          // Show an error or alert that no document is selected
+          alert("Please select a document first");
+          return;
+        }
+
+        setIsGenerating(true);
+
+        try {
+          const response = await fetch('/api/embed', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ document_id: selectedDocument })
+          })
+
+          if (!response.ok) {
+            throw new Error('Failed to generate embeddings');
+          }
+
+          alert("Embeddings generated successfully!");
+        } catch (error) {
+          console.error('Error generating embeddings:', error);
+          alert("Error generating embeddings. Please check console for details.");
+        } finally {
+          setIsGenerating(false);
+        }
+      }}
+        disabled={!selectedDocument || isGenerating}>
+        {isGenerating ? 'Generating...' : 'Generate Embeddings'}
+      </Button>
     </div>
 
   );
